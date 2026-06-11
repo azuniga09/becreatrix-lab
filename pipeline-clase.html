@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeCreatrix Lab · Transporte del Futuro</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --purple: #3C3489; --violet: #7F77DD; --light: #EEEDFE; --pale: #F5F4FF;
+  --orange: #FF6B35; --yellow: #FFD23F; --green: #2ECC71;
+  --text: #1A1A2E; --mid: #555570; --muted: #888; --border: #E0DFEF; --white: #fff;
+  --radius: 14px;
+}
+html, body { font-family: 'Segoe UI', system-ui, Arial, sans-serif; background: var(--pale); min-height: 100vh; }
+
+/* TOPBAR */
+.topbar { background: var(--purple); color: white; height: 56px; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+.topbar-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+.topbar-logo span { color: var(--yellow); }
+.topbar-right { font-size: 13px; color: rgba(255,255,255,0.7); }
+
+/* MAIN */
+.main { max-width: 640px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+/* RETO BANNER */
+.reto-banner { background: linear-gradient(135deg, var(--orange), var(--yellow)); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem; }
+.rb-label { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; color: rgba(255,255,255,0.8); margin-bottom: 4px; }
+.rb-title { font-size: 18px; font-weight: 800; color: white; line-height: 1.3; margin-bottom: 6px; }
+.rb-instruccion { font-size: 13px; color: rgba(255,255,255,0.9); line-height: 1.5; }
+
+/* NOMBRE STEP */
+.card { background: var(--white); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 2px 16px rgba(60,52,137,0.09); margin-bottom: 1rem; }
+.card h2 { font-size: 18px; color: var(--purple); margin-bottom: 4px; }
+.card p { font-size: 13px; color: var(--mid); margin-bottom: 1.25rem; line-height: 1.6; }
+
+/* ITER DOTS */
+.iter-dots { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+.iter-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; transition: all 0.3s; }
+.iter-dot.pending { background: #eee; color: #999; }
+.iter-dot.active { background: var(--violet); color: white; }
+.iter-dot.done { background: var(--green); color: white; }
+.iter-dot-info { }
+.iter-dot-title { font-size: 13px; font-weight: 700; color: var(--purple); }
+.iter-dot-sub { font-size: 11px; color: var(--muted); }
+
+/* FORM */
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-size: 12px; font-weight: 700; color: var(--mid); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+input[type=text], textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: inherit; color: var(--text); transition: border-color 0.2s; }
+input:focus, textarea:focus { outline: none; border-color: var(--violet); }
+textarea { resize: vertical; min-height: 70px; }
+
+/* UPLOAD */
+.upload-zone { border: 2px dashed var(--violet); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; background: var(--light); transition: background 0.2s; }
+.upload-zone:hover { background: #DCDAF8; }
+.upload-zone .uz-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.upload-zone p { font-size: 13px; color: var(--purple); font-weight: 600; }
+input[type=file] { display: none; }
+#foto-preview { width: 100%; max-height: 220px; object-fit: contain; border-radius: 10px; margin-top: 10px; display: none; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 22px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; border: none; transition: all 0.2s; width: 100%; margin-top: 4px; }
+.btn-primary { background: var(--violet); color: white; }
+.btn-primary:hover { background: var(--purple); }
+.btn-primary:disabled { background: #bbb; cursor: not-allowed; }
+.btn-secondary { background: var(--light); color: var(--purple); }
+
+/* LOADING */
+.loading-wrap { text-align: center; padding: 2rem 0; }
+.spinner { font-size: 36px; display: inline-block; animation: spin 1.1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-bar { height: 5px; background: #eee; border-radius: 3px; overflow: hidden; margin: 1rem 0; }
+.loading-fill { height: 100%; width: 0; background: var(--violet); border-radius: 3px; transition: width 0.5s ease; }
+.loading-msg { font-size: 13px; color: var(--muted); }
+
+/* AI BUBBLE */
+.ai-bubble { background: linear-gradient(135deg, var(--purple), var(--violet)); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.ai-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: rgba(255,255,255,0.7); margin-bottom: 6px; }
+.ai-text { font-size: 14px; color: white; line-height: 1.7; }
+
+/* QUESTION BLOCK */
+.q-block { background: var(--light); border-left: 4px solid var(--violet); border-radius: 0 10px 10px 0; padding: 0.875rem 1rem; margin-bottom: 0.875rem; }
+.q-block strong { display: block; color: var(--purple); font-size: 13px; margin-bottom: 6px; }
+
+/* RETO BOX */
+.reto-box { background: linear-gradient(135deg, var(--orange), var(--yellow)); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+.reto-box .rl { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; color: rgba(255,255,255,0.8); margin-bottom: 4px; }
+.reto-box .rt { font-size: 14px; font-weight: 700; color: white; line-height: 1.5; }
+
+/* PLANTEAMIENTO */
+.planteamiento-box { border: 2px solid var(--violet); border-radius: 12px; overflow: hidden; margin-bottom: 1rem; }
+.pb-header { background: var(--purple); padding: 0.75rem 1rem; }
+.pb-header .pbl { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; color: rgba(255,255,255,0.7); }
+.pb-header .pbt { font-size: 15px; font-weight: 700; color: white; margin-top: 2px; }
+.pb-body { padding: 1rem; font-size: 14px; color: var(--text); line-height: 1.7; }
+
+/* HISTORY */
+.history-item { background: var(--pale); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem; margin-bottom: 0.75rem; display: flex; gap: 10px; }
+.hi-img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+.hi-info { flex: 1; }
+.hi-iter { font-size: 11px; font-weight: 700; color: var(--violet); margin-bottom: 2px; }
+.hi-obs { font-size: 12px; color: var(--mid); line-height: 1.5; }
+.hi-reto { font-size: 11px; color: var(--orange); margin-top: 3px; }
+
+/* FINAL CARD */
+.final-card { background: var(--white); border-radius: var(--radius); padding: 1.5rem; box-shadow: 0 4px 24px rgba(60,52,137,0.12); }
+.final-card .fc-badge { display: inline-block; background: var(--light); color: var(--purple); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-bottom: 1rem; }
+.final-card h2 { font-size: 20px; color: var(--purple); margin-bottom: 4px; }
+.final-card .fc-inventor { font-size: 13px; color: var(--muted); margin-bottom: 1.25rem; }
+
+/* ERR */
+.err { font-size: 12px; color: #C0392B; margin-top: 6px; display: none; }
+
+/* STEP visibility */
+.step { display: none; }
+.step.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Be<span>Creatrix</span> Lab</div>
+  <div class="topbar-right">🚀 Transporte del Futuro</div>
+</div>
+
+<div class="main">
+
+  <!-- RETO BANNER -->
+  <div class="reto-banner">
+    <div class="rb-label">🏗️ RETO DEL PROYECTO</div>
+    <div class="rb-title">¿Cómo será el transporte del futuro?</div>
+    <div class="rb-instruccion">Construye con LEGO cómo imaginas el transporte del futuro en tu ciudad. Puede ser un vehículo, una estación, un sistema o cualquier idea loca que se te ocurra.</div>
+  </div>
+
+  <!-- STEP 0: NOMBRE -->
+  <div class="step active" id="step-nombre">
+    <div class="card">
+      <h2>👋 ¡Bienvenido inventor!</h2>
+      <p>Antes de comenzar, escribe tu nombre para que podamos crear tu ficha de innovador.</p>
+      <div class="field">
+        <label>Tu nombre</label>
+        <input type="text" id="inventor-nombre" placeholder="Escribe tu nombre aquí..." maxlength="60">
+      </div>
+      <p class="err" id="err-nombre">Por favor escribe tu nombre.</p>
+      <button class="btn btn-primary" onclick="startProcess()">¡Comenzar a inventar! 🚀</button>
+    </div>
+  </div>
+
+  <!-- STEP 1: IDEACIÓN (3 iteraciones) -->
+  <div class="step" id="step-ideacion">
+
+    <!-- Iter dots -->
+    <div class="card" style="padding:1rem 1.25rem;">
+      <div class="iter-dots">
+        <div class="iter-dot active" id="dot-0">1</div>
+        <div class="iter-dot pending" id="dot-1">2</div>
+        <div class="iter-dot pending" id="dot-2">3</div>
+        <div class="iter-dot-info">
+          <div class="iter-dot-title" id="iter-title">Iteración 1 · Modelo inicial</div>
+          <div class="iter-dot-sub" id="iter-sub">Sube la foto y explica tu modelo</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial de iteraciones anteriores -->
+    <div id="iter-history"></div>
+
+    <!-- SUBSTEP: FOTO + EXPLICACIÓN -->
+    <div class="card" id="sub-foto">
+      <div class="field">
+        <label id="foto-label">Foto de tu modelo LEGO</label>
+        <div class="upload-zone" onclick="document.getElementById('foto-input').click()">
+          <span class="uz-icon">📷</span>
+          <p>Toca para subir tu foto</p>
+        </div>
+        <input type="file" id="foto-input" accept="image/*" onchange="previewFoto(this)">
+        <img id="foto-preview" alt="Tu modelo LEGO">
+      </div>
+      <div class="field">
+        <label id="explain-label">Explica tu modelo: ¿qué construiste y para qué sirve?</label>
+        <textarea id="iter-explicacion" placeholder="Cuéntanos qué hiciste y cuál es tu idea..." rows="3"></textarea>
+      </div>
+      <p class="err" id="err-foto">Por favor sube una foto y escribe tu explicación.</p>
+      <button class="btn btn-primary" onclick="analyzeIter()">Analizar con IA ✨</button>
+    </div>
+
+    <!-- SUBSTEP: LOADING -->
+    <div class="card" id="sub-loading" style="display:none;">
+      <div class="loading-wrap">
+        <span class="spinner">🔍</span>
+        <div class="loading-bar"><div class="loading-fill" id="loading-fill"></div></div>
+        <p class="loading-msg" id="loading-msg">La IA está observando tu modelo...</p>
+      </div>
+    </div>
+
+    <!-- SUBSTEP: RESPUESTA IA -->
+    <div id="sub-response" style="display:none;">
+      <div class="card">
+        <div class="ai-bubble">
+          <div class="ai-label" id="ai-label">🤖 IA BECREATRIX · Iteración 1</div>
+          <div class="ai-text" id="ai-observacion"></div>
+        </div>
+        <div id="questions-list"></div>
+        <div id="reto-box" style="display:none;" class="reto-box">
+          <div class="rl">🏗️ TU RETO PARA LA SIGUIENTE CONSTRUCCIÓN</div>
+          <div class="rt" id="reto-text"></div>
+        </div>
+        <div id="planteamiento-box" style="display:none;" class="planteamiento-box">
+          <div class="pb-header">
+            <div class="pbl">🎯 PLANTEAMIENTO DEL PROBLEMA</div>
+          </div>
+          <div class="pb-body" id="planteamiento-text"></div>
+        </div>
+        <p class="err" id="err-resp">Responde todas las preguntas.</p>
+        <button class="btn btn-primary" id="btn-next-iter" onclick="nextIter()">Siguiente iteración →</button>
+      </div>
+    </div>
+
+  </div><!-- /step-ideacion -->
+
+  <!-- STEP 2: COMPLETADO -->
+  <div class="step" id="step-final">
+    <div class="final-card">
+      <div class="fc-badge">🏆 ¡Proceso de ideación completado!</div>
+      <h2 id="final-nombre">Inventor</h2>
+      <p class="fc-inventor" id="final-sub">BeCreatrix León · Transporte del Futuro</p>
+
+      <div class="planteamiento-box" style="margin-bottom:1.25rem;">
+        <div class="pb-header">
+          <div class="pbl">🎯 TU PLANTEAMIENTO DEL PROBLEMA</div>
+        </div>
+        <div class="pb-body" id="final-planteamiento"></div>
+      </div>
+
+      <div id="final-iteraciones"></div>
+
+      <button class="btn btn-secondary" onclick="reiniciar()" style="margin-top:1rem;">↺ Nuevo inventor</button>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const ANTHROPIC_KEY = 'TU_ANTHROPIC_API_KEY'; // ← pon tu clave aquí
+
+const PROBLEMA = '¿Cómo será el transporte del futuro en nuestra ciudad?';
+const INSTRUCCION = 'Construye con LEGO cómo imaginas el transporte del futuro en tu ciudad. Puede ser un vehículo, una estación, un sistema o cualquier idea innovadora.';
+
+const ITER_META = [
+  { title: 'Iteración 1 · Modelo inicial', sub: 'Sube la foto y explica tu modelo', fotoLabel: 'Foto de tu modelo LEGO', explainLabel: 'Explica tu modelo: ¿qué construiste y para qué sirve?' },
+  { title: 'Iteración 2 · Modelo mejorado', sub: 'Agrega piezas según el reto y sube nueva foto', fotoLabel: 'Foto del modelo mejorado', explainLabel: '¿Qué cambiaste o agregaste siguiendo el reto?' },
+  { title: 'Iteración 3 · Modelo final', sub: 'Última mejora antes del planteamiento', fotoLabel: 'Foto del modelo final', explainLabel: '¿Qué fue lo último que mejoraste y por qué?' },
+];
+
+let state = {
+  nombre: '',
+  currentIter: 0,
+  photos: [], mimes: [], photoSrcs: [], explicaciones: [],
+  aiResponses: [], respuestas: [], planteamiento: null
+};
+
+function startProcess() {
+  const n = document.getElementById('inventor-nombre').value.trim();
+  if (!n) { document.getElementById('err-nombre').style.display = 'block'; return; }
+  state.nombre = n;
+  showStep('step-ideacion');
+  updateDots();
+}
+
+function showStep(id) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showSub(which) {
+  document.getElementById('sub-foto').style.display = which === 'foto' ? 'block' : 'none';
+  document.getElementById('sub-loading').style.display = which === 'loading' ? 'block' : 'none';
+  document.getElementById('sub-response').style.display = which === 'response' ? 'block' : 'none';
+}
+
+function updateDots() {
+  const cur = state.currentIter;
+  for (let i = 0; i < 3; i++) {
+    const d = document.getElementById('dot-' + i);
+    d.className = 'iter-dot ' + (i < cur ? 'done' : i === cur ? 'active' : 'pending');
+    d.textContent = i < cur ? '✓' : i + 1;
+  }
+  const meta = ITER_META[Math.min(cur, 2)];
+  document.getElementById('iter-title').textContent = meta.title;
+  document.getElementById('iter-sub').textContent = meta.sub;
+  document.getElementById('foto-label').textContent = meta.fotoLabel;
+  document.getElementById('explain-label').textContent = meta.explainLabel;
+}
+
+function previewFoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const cur = state.currentIter;
+  state.mimes[cur] = file.type;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    state.photos[cur] = ev.target.result.split(',')[1];
+    state.photoSrcs[cur] = ev.target.result;
+    const img = document.getElementById('foto-preview');
+    img.src = ev.target.result; img.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzeIter() {
+  const cur = state.currentIter;
+  const explicacion = document.getElementById('iter-explicacion').value.trim();
+  if (!state.photos[cur] || !explicacion) { document.getElementById('err-foto').style.display = 'block'; return; }
+  document.getElementById('err-foto').style.display = 'none';
+  state.explicaciones[cur] = explicacion;
+  showSub('loading');
+
+  let w = 0;
+  const msgs = ['La IA está observando tu modelo...', 'Analizando tu idea...', 'Preparando preguntas especiales...'];
+  let mi = 0;
+  const interval = setInterval(() => {
+    w = Math.min(w + 1.5, 88);
+    document.getElementById('loading-fill').style.width = w + '%';
+    if (Math.floor(w) % 30 === 0 && mi < msgs.length) document.getElementById('loading-msg').textContent = msgs[mi++];
+  }, 100);
+
+  const isLast = cur === 2;
+  const prevContext = state.aiResponses.map((r, i) =>
+    `Iteración ${i+1}: El niño explicó "${state.explicaciones[i]}". IA observó: "${r.observacion}". Respuestas: ${(state.respuestas[i]||[]).join(' | ')}`
+  ).join('\n');
+
+  const systemPrompt = isLast
+    ? `Eres un facilitador de innovación de BeCreatrix para niños. El proyecto es sobre: "${PROBLEMA}".
+Analiza la evolución del modelo LEGO y genera el planteamiento final del problema.
+Responde ÚNICAMENTE JSON válido sin texto adicional:
+{
+  "observacion": "descripción emocionante del modelo final (2 oraciones, en español, dirigida al niño)",
+  "preguntas": ["¿pregunta reflexión final 1?", "¿pregunta reflexión final 2?"],
+  "planteamiento": "Planteamiento del problema innovador en 3-4 oraciones basado en todo el proceso del niño"
+}`
+    : `Eres un facilitador de innovación de BeCreatrix para niños. El proyecto es sobre: "${PROBLEMA}". Instrucción original: "${INSTRUCCION}".
+Analiza la foto del modelo LEGO y la explicación del niño. Genera preguntas que lo ayuden a mejorar su modelo y un reto concreto.
+Responde ÚNICAMENTE JSON válido sin texto adicional:
+{
+  "observacion": "descripción emocionante de lo que ves (2 oraciones, en español, dirigida al niño)",
+  "preguntas": ["¿pregunta para mejorar el modelo 1?", "¿pregunta para mejorar el modelo 2?", "¿pregunta para mejorar el modelo 3?"],
+  "reto": "Reto de construcción: qué debe agregar o cambiar en su modelo LEGO para la siguiente iteración (1-2 oraciones)"
+}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 700,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: state.mimes[cur], data: state.photos[cur] } },
+            { type: 'text', text: (prevContext ? `Contexto previo:\n${prevContext}\n\n` : '') + `Iteración ${cur+1} de 3. El niño explica: "${explicacion}"` }
+          ]
+        }]
+      })
+    });
+
+    clearInterval(interval);
+    document.getElementById('loading-fill').style.width = '100%';
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '{}';
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    state.aiResponses[cur] = parsed;
+    renderResponse(parsed, cur, isLast);
+    showSub('response');
+  } catch(e) {
+    clearInterval(interval);
+    showSub('foto');
+    document.getElementById('err-foto').textContent = 'Error al analizar. Verifica la API key y conexión.';
+    document.getElementById('err-foto').style.display = 'block';
+  }
+}
+
+function renderResponse(parsed, cur, isLast) {
+  document.getElementById('ai-label').textContent = `🤖 IA BECREATRIX · Iteración ${cur+1}`;
+  document.getElementById('ai-observacion').textContent = parsed.observacion;
+
+  document.getElementById('questions-list').innerHTML = (parsed.preguntas||[]).map((q,i) => `
+    <div class="q-block">
+      <strong>${q}</strong>
+      <textarea id="q-${i}" placeholder="Escribe tu respuesta..." rows="2"></textarea>
+    </div>`).join('');
+
+  document.getElementById('reto-box').style.display = 'none';
+  document.getElementById('planteamiento-box').style.display = 'none';
+
+  if (isLast && parsed.planteamiento) {
+    document.getElementById('planteamiento-text').textContent = parsed.planteamiento;
+    document.getElementById('planteamiento-box').style.display = 'block';
+    document.getElementById('btn-next-iter').textContent = '✅ Completar ideación';
+    state.planteamiento = parsed.planteamiento;
+  } else if (parsed.reto) {
+    document.getElementById('reto-text').textContent = parsed.reto;
+    document.getElementById('reto-box').style.display = 'block';
+    document.getElementById('btn-next-iter').textContent = 'Siguiente iteración →';
+  }
+}
+
+function nextIter() {
+  const cur = state.currentIter;
+  const parsed = state.aiResponses[cur];
+  if (!parsed) return;
+  const numQ = (parsed.preguntas||[]).length;
+  const resps = Array.from({length:numQ}, (_,i) => document.getElementById('q-'+i)?.value.trim()||'');
+  if (resps.some(r=>!r)) { document.getElementById('err-resp').style.display='block'; return; }
+  document.getElementById('err-resp').style.display='none';
+  state.respuestas[cur] = resps;
+
+  if (cur === 2) {
+    showFinal();
+  } else {
+    state.currentIter = cur + 1;
+    updateDots();
+    renderHistory();
+    showSub('foto');
+    document.getElementById('foto-preview').style.display = 'none';
+    document.getElementById('foto-input').value = '';
+    document.getElementById('iter-explicacion').value = '';
+  }
+}
+
+function renderHistory() {
+  const hist = document.getElementById('iter-history');
+  hist.innerHTML = state.aiResponses.slice(0, state.currentIter).map((r, i) => `
+    <div class="history-item">
+      ${state.photoSrcs[i] ? `<img class="hi-img" src="${state.photoSrcs[i]}">` : ''}
+      <div class="hi-info">
+        <div class="hi-iter">Iteración ${i+1}</div>
+        ${state.explicaciones[i] ? `<div class="hi-obs" style="font-style:italic;color:#aaa;">"${state.explicaciones[i]}"</div>` : ''}
+        <div class="hi-obs">${r.observacion}</div>
+        ${r.reto ? `<div class="hi-reto">🏗️ ${r.reto}</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function showFinal() {
+  document.getElementById('final-nombre').textContent = '🏆 ' + state.nombre;
+  document.getElementById('final-planteamiento').textContent = state.planteamiento || '';
+  document.getElementById('final-iteraciones').innerHTML = state.aiResponses.map((r,i) => `
+    <div style="margin-bottom:1rem;padding:0.875rem;background:var(--pale);border-radius:10px;border:1px solid var(--border);">
+      <div style="font-size:11px;font-weight:700;color:var(--violet);margin-bottom:4px;">Iteración ${i+1}</div>
+      <div style="font-size:13px;color:var(--mid);">${r.observacion}</div>
+    </div>`).join('');
+  showStep('step-final');
+}
+
+function reiniciar() {
+  state = { nombre:'', currentIter:0, photos:[], mimes:[], photoSrcs:[], explicaciones:[], aiResponses:[], respuestas:[], planteamiento:null };
+  document.getElementById('inventor-nombre').value = '';
+  document.getElementById('iter-history').innerHTML = '';
+  document.getElementById('foto-preview').style.display = 'none';
+  document.getElementById('iter-explicacion').value = '';
+  showSub('foto');
+  updateDots();
+  showStep('step-nombre');
+}
+</script>
+</body>
+</html>
